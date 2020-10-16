@@ -104,6 +104,7 @@ public class EnrollmentServiceControllerTest {
 		return respEntity;
 	}	
 	
+	
 	@Test
 	public void testGetEnrollee() {
 		
@@ -118,16 +119,6 @@ public class EnrollmentServiceControllerTest {
 		assertThat(entity.getBody().getId()).isEqualTo(enrollee.getId());
 	}
 
-	@Test
-	public void testGetEnrolleeNotExists() {
-		
-		String url = getEnrolleeUrl() + "/" + "99999999"; // Random Id
-		
-		ResponseEntity<Enrollee> entity = testRestTemplate.getForEntity(url, Enrollee.class);
-		assertThat(entity.getStatusCode()).isNotEqualTo(HttpStatus.OK);
-		assertThat(entity.getBody()).isNull();
-	}
-	
 	@Test
 	public void testAddEnrollee() {
 		
@@ -164,7 +155,7 @@ public class EnrollmentServiceControllerTest {
 		testRestTemplate.delete(url);
 
 		ResponseEntity<Enrollee> entity = testRestTemplate.getForEntity(url, Enrollee.class);
-		assertThat(entity.getStatusCode()).isNotEqualTo(HttpStatus.OK);
+		assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
@@ -209,8 +200,86 @@ public class EnrollmentServiceControllerTest {
 
 
 		ResponseEntity<Dependent> respEntity = testRestTemplate.getForEntity(url, Dependent.class);
-		assertThat(respEntity.getStatusCode()).isNotEqualTo(HttpStatus.OK);
+		assertThat(respEntity.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(respEntity.getBody()).isNull();
+	}
+
+	@Test
+	public void testGetEnrolleeNegative () {
+		
+		// Not exists
+		String url = getEnrolleeUrl() + "/" + "99999999"; // Random Id
+		
+		ResponseEntity<Enrollee> entity = testRestTemplate.getForEntity(url, Enrollee.class);
+		assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(entity.getBody()).isNull();
+	}
+	
+	
+	@Test
+	public void testAddEnrolleeNegative () {
+		
+		String url = getEnrolleeUrl();
+		
+		Enrollee enrollee = createEnrollee();
+		
+		// No First Name
+		enrollee.setFirstName(null);
+		HttpEntity<Enrollee> entity = new HttpEntity<Enrollee>(enrollee);
+		ResponseEntity<Enrollee> respentity = testRestTemplate.exchange(url, HttpMethod.POST, entity, Enrollee.class);
+		assertThat(respentity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(respentity.getBody().getId()).isNull();
+		
+		// No Last Name
+		enrollee = createEnrollee();
+		enrollee.setLastName(null);
+		entity = new HttpEntity<Enrollee>(enrollee);
+		respentity = testRestTemplate.exchange(url, HttpMethod.POST, entity, Enrollee.class);
+		assertThat(respentity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(respentity.getBody().getId()).isNull();
+		
+		// No DOB
+		enrollee = createEnrollee();
+		enrollee.setDateOfBirth(null);
+		entity = new HttpEntity<Enrollee>(enrollee);
+		respentity = testRestTemplate.exchange(url, HttpMethod.POST, entity, Enrollee.class);
+		assertThat(respentity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(respentity.getBody().getId()).isNull();
+		
+	}
+	
+
+	@Test
+	public void testAddDependentNegative () {
+
+		
+		Enrollee enrollee =  addEnrollee ().getBody();
+		
+		String url = getDependentUrl() + "/" + enrollee.getId();
+
+		// No First Name
+		Dependent dependent = createDependent();
+		dependent.setFirstName(null);
+		HttpEntity<Dependent> entity = new HttpEntity<Dependent>(dependent);
+		ResponseEntity<Enrollee> respEntity = testRestTemplate.exchange(url, HttpMethod.POST, entity, Enrollee.class);
+		assertThat(respEntity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(respEntity.getBody().getDependents().size()).isEqualTo(0);
+		
+		// No Last Name
+		dependent = createDependent();
+		dependent.setLastName(null);
+		entity = new HttpEntity<Dependent>(dependent);
+		respEntity = testRestTemplate.exchange(url, HttpMethod.POST, entity, Enrollee.class);
+		assertThat(respEntity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(respEntity.getBody().getDependents().size()).isEqualTo(0);
+		
+		// No DOB
+		dependent = createDependent();
+		dependent.setDateOfBirth(null);
+		entity = new HttpEntity<Dependent>(dependent);
+		respEntity = testRestTemplate.exchange(url, HttpMethod.POST, entity, Enrollee.class);
+		assertThat(respEntity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(respEntity.getBody().getDependents().size()).isEqualTo(0);
 	}
 	
 }
